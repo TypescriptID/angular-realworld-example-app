@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, Router, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
 
-import { Article, ArticlesService, UserService } from '../shared';
+import { Article, ArticlesService, UserService } from '../core';
+import { catchError } from 'rxjs/operators/catchError';
+import { map } from 'rxjs/operators/map';
 
 @Injectable()
 export class EditableArticleResolver implements Resolve<Article> {
@@ -10,7 +12,7 @@ export class EditableArticleResolver implements Resolve<Article> {
     private articlesService: ArticlesService,
     private router: Router,
     private userService: UserService
-  ) {}
+  ) { }
 
   resolve(
     route: ActivatedRouteSnapshot,
@@ -18,17 +20,17 @@ export class EditableArticleResolver implements Resolve<Article> {
   ): Observable<any> {
 
     return this.articlesService.get(route.params['slug'])
-           .map(
-             article => {
-               if (this.userService.getCurrentUser().username === article.author.username) {
-                 return article;
-               } else {
-                 this.router.navigateByUrl('/');
-               }
-
-             }
-           )
-           .catch((err) => this.router.navigateByUrl('/'));
-
+      .pipe(
+        map(
+          article => {
+            if (this.userService.getCurrentUser().username === article.author.username) {
+              return article;
+            } else {
+              this.router.navigateByUrl('/');
+            }
+          }
+        ),
+        catchError((err) => this.router.navigateByUrl('/'))
+      );
   }
 }
